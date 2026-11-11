@@ -56,6 +56,8 @@ not require an API key and is kept for deterministic tests. Never commit
 python app.py --question "How should I protect user data?" --use-api
 python app.py --question "كيف أحمي بيانات المستخدمين؟" --answer-language ar --use-api
 python app.py --question "How do I protect my vector embeddings?" --use-api --general
+python app.py --analytics
+python app.py --analytics-demo
 python app.py --rag "How should I protect user data?"
 python app.py --question "How should I protect user data?"
 ```
@@ -65,6 +67,11 @@ OpenRouter and therefore require `--answer-language ar --use-api`.
 Use `--general` with `--use-api` for direct technical questions outside the
 project knowledge base. Without `--general`, API answers remain grounded in
 the project knowledge retrieved by RAG.
+
+The assistant records asked questions locally in `question_log.jsonl`. Use
+`--analytics` to generate `question_analytics.png` from real usage. Use
+`--analytics-demo` only for a presentation with sample data. Both generated
+files are ignored by Git and are not uploaded.
 
 ## Quality checks
 
@@ -135,6 +142,8 @@ changes.
 | `--question QUESTION` | Ask a question |
 | `--use-api` | Generate the final answer with OpenRouter using retrieved RAG context |
 | `--general` | Answer a technical question directly with OpenRouter without RAG restriction |
+| `--analytics` | Generate a chart from recorded questions |
+| `--analytics-demo` | Generate a presentation chart from sample questions |
 | `--answer-language {en,ar}` | Select the generated answer language |
 | `--rag QUESTION` | Semantic retrieval and grounded context |
 | `--filter-id ID` | Restrict RAG retrieval to one knowledge item |

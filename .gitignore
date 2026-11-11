@@ -5,3 +5,5 @@ conversation.db
 assistant_audit.jsonl
 .pytest_cache/
 .venv/
+question_log.jsonl
+question_analytics.png

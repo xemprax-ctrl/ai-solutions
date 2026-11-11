@@ -12,6 +12,7 @@ from assistant import answer_question, load_knowledge
 from agent_evaluation import run_agent_evaluation, run_deepeval_evaluation
 from conversation_memory import run_memory_demo
 from ingestion import run_pipeline
+from question_analytics import build_report, demo_questions, record_question
 from rag_service import RAGService, default_evaluation_tests
 from tools import build_registry, run_integration_test, run_parallel_demo
 
@@ -150,6 +151,8 @@ def main() -> None:
         action="store_true",
         help="Answer any technical question directly with OpenRouter instead of RAG",
     )
+    parser.add_argument("--analytics", action="store_true", help="Generate a chart from recorded questions")
+    parser.add_argument("--analytics-demo", action="store_true", help="Generate a chart from sample technical questions")
     parser.add_argument("--show-tools", action="store_true", help="Show Lab 3 tools and schemas")
     parser.add_argument("--test-tools", action="store_true", help="Run the Lab 3 integration test")
     parser.add_argument("--parallel-tools", action="store_true", help="Run Lab 3 tools in parallel")
@@ -163,6 +166,10 @@ def main() -> None:
     parser.add_argument("--deepeval-evaluation", action="store_true", help="Run DeepEval RAG metrics (Lab 7)")
     args = parser.parse_args()
 
+    if args.analytics or args.analytics_demo:
+        questions = demo_questions() if args.analytics_demo else None
+        print(json.dumps(build_report(questions), ensure_ascii=False, indent=2))
+        return
     if args.show_tools:
         registry = build_registry()
         print("Available tools:", ", ".join(registry.names()))
@@ -209,6 +216,7 @@ def main() -> None:
     answer_language = args.answer_language or choose_language("Answer language (en): ")
     if not question:
         raise SystemExit("The question cannot be empty.")
+    record_question(question)
 
     api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
     if args.answer_language == "ar" and not args.use_api:

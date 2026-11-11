@@ -59,24 +59,29 @@ def ask_api(
         "You are a grounded AI solutions advisor. Generate a concise answer "
         "only from the provided retrieved context. If it is insufficient, "
         "say so clearly and do not invent facts. Mention the relevant source "
-        "when it helps the user verify the answer."
+        "when it helps the user verify the answer. "
         if grounded
         else
         "You are a helpful technical AI assistant. Answer the user's technical "
         "question directly and accurately. Explain assumptions, give practical "
         "steps or code when useful, and clearly say when a detail is uncertain."
     )
+    response_format = (
+        " Keep the answer under 120 words. Return exactly two parts: "
+        "Summary: one or two short sentences. Steps: up to 3 numbered steps. "
+        "If the question is ambiguous, state one short assumption."
+    )
     payload = {
         "model": os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
         "messages": [
             {
                 "role": "system",
-                "content": f"{system_prompt} Answer in {language}.",
+                "content": f"{system_prompt}{response_format} Answer in {language}.",
             },
             {"role": "user", "content": question},
         ],
         "temperature": 0.2,
-        "max_tokens": 500,
+        "max_tokens": int(os.getenv("OPENROUTER_MAX_TOKENS", "220")),
     }
     if grounded:
         payload["messages"].insert(

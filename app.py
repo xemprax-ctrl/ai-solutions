@@ -34,38 +34,53 @@ def load_dotenv(path: Path = ROOT / ".env") -> None:
         os.environ.setdefault(name, value.strip().strip("\"'"))
 
 
-def ask_api(question: str, answer_language: str, api_key: str) -> str:
+def ask_api(
+    question: str,
+    answer_language: str,
+    api_key: str,
+    grounded: bool = True,
+) -> str:
     if answer_language not in {"en", "ar"}:
         raise ValueError("Answer language must be en or ar.")
     language = "English" if answer_language == "en" else "Arabic"
-    retrieval = RAGService()
-    documents = retrieval.search(question, n_results=3)
-    if not documents:
-        raise RuntimeError("No trusted context was found for this question.")
-    context = "\n".join(
-        f"- {document.content} "
-        f"(source: {document.metadata.get('source', 'unknown')})"
-        for document in documents
+    context = ""
+    if grounded:
+        retrieval = RAGService()
+        documents = retrieval.search(question, n_results=3)
+        if not documents:
+            raise RuntimeError("No trusted context was found for this question.")
+        context = "\n".join(
+            f"- {document.content} "
+            f"(source: {document.metadata.get('source', 'unknown')})"
+            for document in documents
+        )
+    system_prompt = (
+        "You are a grounded AI solutions advisor. Generate a concise answer "
+        "only from the provided retrieved context. If it is insufficient, "
+        "say so clearly and do not invent facts. Mention the relevant source "
+        "when it helps the user verify the answer."
+        if grounded
+        else
+        "You are a helpful technical AI assistant. Answer the user's technical "
+        "question directly and accurately. Explain assumptions, give practical "
+        "steps or code when useful, and clearly say when a detail is uncertain."
     )
     payload = {
         "model": os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
         "messages": [
             {
                 "role": "system",
-                "content": (
-                    "You are a grounded AI solutions advisor. Generate a concise answer "
-                    "only from the provided retrieved context. If it is insufficient, "
-                    "say so clearly and do not invent facts. Mention the relevant source "
-                    "when it helps the user verify the answer. "
-                    f"Answer in {language}."
-                ),
+                "content": f"{system_prompt} Answer in {language}.",
             },
-            {"role": "system", "content": f"Knowledge context:\n{context}"},
             {"role": "user", "content": question},
         ],
         "temperature": 0.2,
         "max_tokens": 500,
     }
+    if grounded:
+        payload["messages"].insert(
+            1, {"role": "system", "content": f"Knowledge context:\n{context}"}
+        )
     req = request.Request(
         API_URL,
         data=json.dumps(payload).encode("utf-8"),
@@ -130,6 +145,11 @@ def main() -> None:
     parser.add_argument("--question-language", choices=("en", "ar"), default="en", help="Question language")
     parser.add_argument("--answer-language", choices=("en", "ar"), default="en", help="Answer language")
     parser.add_argument("--use-api", action="store_true", help="Use the API instead of local answers")
+    parser.add_argument(
+        "--general",
+        action="store_true",
+        help="Answer any technical question directly with OpenRouter instead of RAG",
+    )
     parser.add_argument("--show-tools", action="store_true", help="Show Lab 3 tools and schemas")
     parser.add_argument("--test-tools", action="store_true", help="Run the Lab 3 integration test")
     parser.add_argument("--parallel-tools", action="store_true", help="Run Lab 3 tools in parallel")
@@ -197,7 +217,7 @@ def main() -> None:
         if not api_key:
             raise SystemExit("Set OPENROUTER_API_KEY in .env or the environment first.")
         started = time.perf_counter()
-        answer = ask_api(question, answer_language, api_key)
+        answer = ask_api(question, answer_language, api_key, grounded=not args.general)
         print(f"\nAnswer: {answer}")
         print(f"Latency: {(time.perf_counter() - started) * 1000:.0f} ms")
         return

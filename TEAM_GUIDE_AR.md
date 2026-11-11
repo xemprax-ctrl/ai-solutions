@@ -56,6 +56,16 @@ os.environ["OPENROUTER_API_KEY"] = userdata.get("OPENROUTER_API_KEY")
 !python app.py --question "كيف أحمي بيانات المستخدمين؟" --answer-language ar --use-api
 ```
 
+لطرح أي سؤال تقني مباشر خارج قاعدة معرفة المشروع، استخدموا `--general`:
+
+```python
+!python app.py --question "How do I protect my vector embeddings?" --use-api --general
+```
+
+بدون `--general` يبقى التوليد مقيدًا بسياق RAG وقاعدة معرفة المشروع. استخدموا
+الوضع المقيد عند الحاجة إلى إجابة موثقة من مصادر المشروع، واستخدموا الوضع العام
+للأسئلة التقنية الأوسع.
+
 لا تضعوا مفتاح API داخل الكود أو GitHub أو الرسائل.
 
 ## توزيع الأدوار

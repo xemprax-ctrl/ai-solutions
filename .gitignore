@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.py[cod]
+conversation.db
+assistant_audit.jsonl
+.pytest_cache/
+.venv/

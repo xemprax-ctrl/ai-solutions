@@ -1,0 +1,144 @@
+# Grounded AI Solutions Assistant
+
+An English-first knowledge assistant for practical AI solution guidance.
+It combines local grounded answers, semantic retrieval, conversation memory,
+execution tracing, loop protection, and measurable evaluation in one project.
+
+**Author:** Abdullah Mohammed Alabdullah  
+**GitHub:** [xemprax-ctrl](https://github.com/xemprax-ctrl)
+
+## What it does
+
+- Answers questions only from the project knowledge base.
+- Returns the answer, source, confidence, topic, and status.
+- Uses ChromaDB and sentence-transformer embeddings for semantic retrieval.
+- Supports metadata-filtered RAG and retrieval metrics.
+- Stores conversation messages in SQLite and compacts context with summaries.
+- Detects repeated requests before they become loops.
+- Produces an execution trace for assistant calls.
+- Runs deterministic quality checks and optional DeepEval metrics.
+
+## Setup
+
+Create an isolated environment before installing dependencies:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+For optional evaluation features:
+
+```powershell
+python -m pip install -r requirements-evaluation.txt
+```
+
+Copy `.env.example` to `.env` only if you need OpenRouter mode, then add your
+own key locally. Never commit `.env`.
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The local mode does not require an API key and is the default. Optional
+OpenRouter mode reads `OPENROUTER_API_KEY` from `.env`; it retrieves relevant
+context with RAG and asks the AI to generate the final answer from that context.
+Never commit `.env`.
+
+## Quick start
+
+```powershell
+python app.py --question "How should I protect user data?"
+python app.py --rag "How should I protect user data?"
+python app.py --question "How should I protect user data?" --use-api
+```
+
+## Quality checks
+
+Run the project capabilities individually:
+
+```powershell
+python -m compileall -q .
+python app.py --test-tools
+python app.py --ingest
+python app.py --embeddings
+python app.py --evaluate-retrieval
+python app.py --memory-demo
+python app.py --agent-evaluation
+```
+
+Expected quality results:
+
+- Embedding validation is `true`.
+- Retrieval Hit Rate@3 and MRR@3 are `1.0` for the included dataset.
+- Lab 6 Fidelity Gate is `Passed`.
+- Lab 7 local evaluation pass rate is `1.0`.
+
+## Optional DeepEval metrics
+
+Install the optional evaluator only when needed:
+
+```powershell
+python -m pip install -r requirements-evaluation.txt
+python app.py --deepeval-evaluation
+```
+
+DeepEval may require a configured judge model or provider API, depending on
+your environment. The local evaluator works without external services.
+
+## Team workflow
+
+Each contributor should clone the repository and create their own virtual
+environment. Do not share `.env`, `.venv`, `conversation.db`, or generated
+cache files through Git.
+
+```powershell
+git clone REPOSITORY_URL
+cd PROJECT_FOLDER
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Create a separate branch for each task:
+
+```powershell
+git pull origin main
+git checkout -b feature/short-description
+# edit and test the project
+git add .
+git commit -m "Describe the change"
+git push -u origin feature/short-description
+```
+
+Open a Pull Request on GitHub, review it with the team, and merge it into
+`main`. Before starting another task, switch back to `main` and pull the latest
+changes.
+
+## Main commands
+
+| Command | Purpose |
+|---|---|
+| `--question QUESTION` | Grounded local answer |
+| `--use-api` | Generate an answer with OpenRouter using retrieved RAG context |
+| `--rag QUESTION` | Semantic retrieval and grounded context |
+| `--filter-id ID` | Restrict RAG retrieval to one knowledge item |
+| `--evaluate-retrieval` | Hit Rate@3 and MRR@3 |
+| `--memory-demo` | SQLite memory, summary, and context compaction |
+| `--agent-evaluation` | Loop detection, tracing, and local quality metrics |
+| `--deepeval-evaluation` | Optional LLM-as-a-judge evaluation |
+
+## Project structure
+
+- `app.py` — command-line entry point.
+- `assistant.py` — grounded answer engine and confidence scoring.
+- `knowledge_base.json` — project knowledge and sources.
+- `ingestion.py` — document cleaning, chunking, and embeddings.
+- `rag_service.py` — vector search, metadata filters, and retrieval evaluation.
+- `conversation_memory.py` — SQLite memory and context compaction.
+- `agent_evaluation.py` — loop detection, tracing, and evaluation.
+- `tools.py` — validated tool registry and parallel tool execution.
+- `requirements.txt` — core runtime dependencies.
+- `requirements-evaluation.txt` — optional DeepEval dependency.

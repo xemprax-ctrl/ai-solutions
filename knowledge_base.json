@@ -1,0 +1,30 @@
+[
+  {
+    "id": "digital-id",
+    "title": "Digital identity",
+    "keywords": ["national access", "digital identity", "login", "verification"],
+    "answer_en": "Use the Nafath application to verify your identity when accessing digital services. Never share your verification code or password.",
+    "source": "Digital security awareness guide - project training content"
+  },
+  {
+    "id": "training",
+    "title": "Training programs",
+    "keywords": ["course", "training", "program", "learning"],
+    "answer_en": "Start by identifying the required skill, then review the program eligibility and registration dates with the provider before applying.",
+    "source": "Training programs guide - project training content"
+  },
+  {
+    "id": "data-privacy",
+    "title": "Data privacy",
+    "keywords": ["data", "privacy", "protection", "personal information"],
+    "answer_en": "Collect only the data you need, explain why it is used, and store it securely with restricted access.",
+    "source": "Privacy and responsible AI principles - project training content"
+  },
+  {
+    "id": "ai-project",
+    "title": "Starting an AI project",
+    "keywords": ["ai project", "artificial intelligence", "model", "solution"],
+    "answer_en": "Define the problem and a measurable success metric, prepare suitable data, build a prototype, and test it before scaling.",
+    "source": "AI solutions development methodology - project training content"
+  }
+]

@@ -28,11 +28,16 @@ def load_dotenv(path: Path = ROOT / ".env") -> None:
         if not line or line.startswith("#") or "=" not in line:
             continue
         name, value = line.split("=", 1)
-        os.environ.setdefault(name.strip(), value.strip().strip("\"'"))
+        name = name.strip()
+        if name.startswith("export "):
+            name = name[7:].strip()
+        os.environ.setdefault(name, value.strip().strip("\"'"))
 
 
 def ask_api(question: str, answer_language: str, api_key: str) -> str:
-    language = "English"
+    if answer_language not in {"en", "ar"}:
+        raise ValueError("Answer language must be en or ar.")
+    language = "English" if answer_language == "en" else "Arabic"
     retrieval = RAGService()
     documents = retrieval.search(question, n_results=3)
     if not documents:
@@ -50,7 +55,8 @@ def ask_api(question: str, answer_language: str, api_key: str) -> str:
                 "content": (
                     "You are a grounded AI solutions advisor. Generate a concise answer "
                     "only from the provided retrieved context. If it is insufficient, "
-                    "say so clearly and do not invent facts. "
+                    "say so clearly and do not invent facts. Mention the relevant source "
+                    "when it helps the user verify the answer. "
                     f"Answer in {language}."
                 ),
             },
@@ -63,19 +69,44 @@ def ask_api(question: str, answer_language: str, api_key: str) -> str:
     req = request.Request(
         API_URL,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "http://localhost"),
+            "X-Title": os.getenv("OPENROUTER_APP_NAME", "Grounded AI Solutions Assistant"),
+        },
         method="POST",
     )
-    req.add_header("Authorization", "Bearer " + api_key)
     try:
         with request.urlopen(req, timeout=60) as response:
             body = json.loads(response.read().decode("utf-8"))
-    except (error.HTTPError, error.URLError, TimeoutError) as exc:
-        raise RuntimeError(f"Could not connect to the AI service: {exc}") from exc
+    except error.HTTPError as exc:
+        details = exc.read().decode("utf-8", errors="replace").strip()
+        raise RuntimeError(
+            f"OpenRouter returned HTTP {exc.code}: {details or exc.reason}"
+        ) from exc
+    except (error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Could not connect to OpenRouter: {exc}") from exc
+
+    if body.get("error"):
+        raise RuntimeError(f"OpenRouter error: {body['error']}")
     try:
-        return body["choices"][0]["message"]["content"].strip()
+        content = body["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
-        raise RuntimeError("Unexpected API response.") from exc
+        raise RuntimeError("OpenRouter returned an unexpected response.") from exc
+    if isinstance(content, str):
+        answer = content.strip()
+    elif isinstance(content, list):
+        answer = " ".join(
+            part.get("text", "")
+            for part in content
+            if isinstance(part, dict) and isinstance(part.get("text"), str)
+        ).strip()
+    else:
+        answer = ""
+    if not answer:
+        raise RuntimeError("OpenRouter returned an empty answer.")
+    return answer
 
 
 def choose_language(prompt: str) -> str:
@@ -94,10 +125,10 @@ def print_response(response: dict[str, object]) -> None:
 
 def main() -> None:
     load_dotenv()
-    parser = argparse.ArgumentParser(description="English AI solutions assistant")
+    parser = argparse.ArgumentParser(description="Grounded AI solutions assistant")
     parser.add_argument("--question", help="Question to answer")
-    parser.add_argument("--question-language", choices=("en",), default="en", help="Question language")
-    parser.add_argument("--answer-language", choices=("en",), default="en", help="Answer language")
+    parser.add_argument("--question-language", choices=("en", "ar"), default="en", help="Question language")
+    parser.add_argument("--answer-language", choices=("en", "ar"), default="en", help="Answer language")
     parser.add_argument("--use-api", action="store_true", help="Use the API instead of local answers")
     parser.add_argument("--show-tools", action="store_true", help="Show Lab 3 tools and schemas")
     parser.add_argument("--test-tools", action="store_true", help="Run the Lab 3 integration test")
@@ -160,6 +191,8 @@ def main() -> None:
         raise SystemExit("The question cannot be empty.")
 
     api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    if args.answer_language == "ar" and not args.use_api:
+        raise SystemExit("Arabic answers require OpenRouter. Add --use-api and configure OPENROUTER_API_KEY.")
     if args.use_api:
         if not api_key:
             raise SystemExit("Set OPENROUTER_API_KEY in .env or the environment first.")

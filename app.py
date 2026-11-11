@@ -64,11 +64,13 @@ def ask_api(
         else
         "You are a helpful technical AI assistant. Answer the user's technical "
         "question directly and accurately. Explain assumptions, give practical "
-        "steps or code when useful, and clearly say when a detail is uncertain."
+        "steps or code when useful, and clearly say when a detail is uncertain. "
+        "When a technical term is misspelled, infer its meaning from the surrounding "
+        "context instead of inventing unrelated interpretations."
     )
     response_format = (
-        " Keep the answer under 120 words. Return exactly two parts: "
-        "Summary: one or two short sentences. Steps: up to 3 numbered steps. "
+        " Keep the answer under 180 words. Return exactly two parts: "
+        "Summary: two or three short sentences. Steps: up to 4 numbered steps. "
         "If the question is ambiguous, state one short assumption."
     )
     payload = {

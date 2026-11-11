@@ -67,8 +67,9 @@ OpenRouter and therefore require `--answer-language ar --use-api`.
 Use `--general` with `--use-api` for direct technical questions outside the
 project knowledge base. Without `--general`, API answers remain grounded in
 the project knowledge retrieved by RAG.
-API answers are intentionally short: a brief summary followed by up to three
-steps. Adjust `OPENROUTER_MAX_TOKENS` in `.env` only when needed.
+API answers are intentionally concise: a two- or three-sentence summary followed
+by up to four useful steps. Adjust `OPENROUTER_MAX_TOKENS` in `.env` only when
+needed.
 
 The assistant records asked questions locally in `question_log.jsonl`. Use
 `--analytics` to generate `question_analytics.png` from real usage. Use
